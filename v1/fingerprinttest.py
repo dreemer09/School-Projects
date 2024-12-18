@@ -1,6 +1,7 @@
-from fingerprint import FingerprintManager as fp_manager
+from fingerprint import FingerprintManager as fp
 
 def main():
+    fp_manager = fp()
     while True:
         command = input(
             "Enter '1' to enroll, '2' to find, '3' to delete, '4' to list fingerprints, '99' to clear flash storage '0' to quit: "

@@ -2,13 +2,13 @@ import customtkinter
 from fingerprint import FingerprintManager
 import os
 import subprocess
-from PIL import Image, ImageTk
 
 
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
 
+        self.attributes('-fullscreen', True)
         self.title("Attendance System")
         self.geometry("800x480")
 
@@ -18,6 +18,14 @@ class App(customtkinter.CTk):
         # Create a container to hold frames
         self.container = customtkinter.CTkFrame(self)
         self.container.pack(fill="both", expand=True)
+
+        # Centering all frames within the container
+        self.container.grid_rowconfigure(0, weight=1)  # Top empty space
+        self.container.grid_rowconfigure(1, weight=0)  # Centered content
+        self.container.grid_rowconfigure(2, weight=1)  # Bottom empty space
+        self.container.grid_columnconfigure(0, weight=1)  # Left empty space
+        self.container.grid_columnconfigure(1, weight=0)  # Centered content
+        self.container.grid_columnconfigure(2, weight=1)  # Right empty space
 
         # Frames dictionary to manage views
         self.frames = {}
@@ -44,7 +52,7 @@ class MainFrame(customtkinter.CTkFrame):
 
         # Main interface
         self.label = customtkinter.CTkLabel(self, text="Place your finger on the sensor", font=("Arial", 18))
-        self.label.pack(pady=20)
+        self.label.pack(pady=20,)
 
         self.image_label = customtkinter.CTkLabel(self)
         self.image_label.pack(pady=20)
@@ -52,67 +60,13 @@ class MainFrame(customtkinter.CTkFrame):
         self.result_label = customtkinter.CTkLabel(self, text="", font=("Arial", 16))
         self.result_label.pack(pady=10)
 
-        self.start_button = customtkinter.CTkButton(self, text="Start Verification", command=self.start_verification)
-        self.start_button.pack(pady=20)
+        # Start the continuous verification loop
+        self.continuous_verification()
 
-        # Animation attributes
-        self.gif_path = "Animation/fingerprint.gif"  # Path to your GIF file
-        self.gif = None
-        self.gif_index = 0
-        self.animation_running = False
-
-    def load_gif(self):
-        """Load the GIF into a PIL object."""
-        self.gif = Image.open(self.gif_path)
-
-    def start_animation(self):
-        """Start the fingerprint scanning animation."""
-        if not self.gif:
-            self.load_gif()
-
-        self.animation_running = True
-        self.update_animation_frame()
-
-    def update_animation_frame(self):
-        """Update the current frame of the GIF."""
-        if self.animation_running and self.gif:
-            try:
-                # Select frame and update image
-                self.gif.seek(self.gif_index)
-                frame_image = ImageTk.PhotoImage(self.gif)
-                self.image_label.configure(image=frame_image)
-                self.image_label.image = frame_image
-
-                # Move to the next frame
-                self.gif_index += 1
-                self.after(100, self.update_animation_frame)  # Adjust speed as needed
-            except EOFError:
-                # Restart GIF animation
-                self.gif_index = 0
-                if self.animation_running:
-                    self.update_animation_frame()
-
-    def stop_animation(self):
-        """Stop the fingerprint scanning animation."""
-        self.animation_running = False
-        self.image_label.configure(image="")  # Clear the animation
-
-    def start_verification(self):
-        """Start fingerprint verification."""
-        self.label.configure(text="Checking fingerprint...")
-        self.start_animation()
-
-        # Simulate fingerprint scanning process
-        self.after(3000, self.verify_fingerprint)  # Simulate a delay for scanning (3 seconds)
-
-    def verify_fingerprint(self):
-        """Verify the fingerprint after scanning."""
-        self.stop_animation()
-
+    def continuous_verification(self):
+        """Continuously check for fingerprint scans."""
         finger_id = self.app.fp_manager.search_fingerprint()
-        if finger_id is None:
-            self.result_label.configure(text="No match found. Try again.", text_color="red")
-        else:
+        if finger_id is not None:
             # Check if the fingerprint ID corresponds to an admin
             if self.is_admin(finger_id):
                 self.result_label.configure(text=f"Admin detected (ID: {finger_id}).", text_color="green")
@@ -120,9 +74,14 @@ class MainFrame(customtkinter.CTkFrame):
             else:
                 self.result_label.configure(text=f"Attendance recorded (ID: {finger_id}).", text_color="blue")
                 self.record_attendance(finger_id)
+            
+            # Reset label after processing
+            self.label.configure(text="Place your finger on the sensor again.")
+        else:
+            self.result_label.configure(text="No match found. Try again.", text_color="red")
 
-        # Reset label for next scan
-        self.label.configure(text="Place your finger on the sensor again.")
+        # Schedule the next check
+        self.after(1000, self.continuous_verification)  # Adjust delay as needed
 
     def is_admin(self, finger_id):
         """Determine if the fingerprint ID belongs to an admin."""
@@ -133,6 +92,7 @@ class MainFrame(customtkinter.CTkFrame):
         """Record attendance for the given fingerprint ID."""
         # Example: Add logic to record attendance in the database
         print(f"Attendance recorded for ID: {finger_id}")
+
 
 
 class AdminFrame(customtkinter.CTkFrame):
