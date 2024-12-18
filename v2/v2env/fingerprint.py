@@ -10,22 +10,32 @@ class FingerprintManager:
     def find_empty_slot(self):
         """Find the next available fingerprint slot."""
         for slot in range(1, 128):  # 128 is the max capacity for most fingerprint modules
-            if self.read_templates() == adafruit_fingerprint.OK:
-                if slot not in self.templates:
+            if self.finger.read_templates() == adafruit_fingerprint.OK:
+                if slot not in self.finger.templates:
                     return slot
         return None
 
     def enroll_fingerprint(self):
         """Enroll a new fingerprint."""
         print("Place your finger on the sensor...")
-        if self.get_image() != adafruit_fingerprint.OK:
+        if self.finger.get_image() != adafruit_fingerprint.OK:
             print("Fingerprint not detected. Please try again.")
             return False
-        if self.image_2_tz(1) != adafruit_fingerprint.OK:
+        
+        if self.finger.image_2_tz(1) != adafruit_fingerprint.OK:
             print("Error processing fingerprint. Please try again.")
             return False
+        
+        if self.finger.get_image() != adafruit_fingerprint.OK:
+            return False
+        if self.finger.image_2_tz(2) != adafruit_fingerprint.OK:
+            return False
+        
+        if self.finger.finger_fast_search() == adafruit_fingerprint.OK:
+            print("Already enrolled!")
+            return False
 
-        if self.create_model() != adafruit_fingerprint.OK:
+        if self.finger.create_model() != adafruit_fingerprint.OK:
             print("Failed to create a fingerprint model.")
             return False
 
@@ -34,7 +44,7 @@ class FingerprintManager:
             print("No available slots for new fingerprints.")
             return False
 
-        if self.store_model(position) == adafruit_fingerprint.OK:
+        if self.finger.store_model(position) == adafruit_fingerprint.OK:
             print(f"Fingerprint successfully enrolled at position {position}.")
             return True
         else:
@@ -44,23 +54,23 @@ class FingerprintManager:
     def search_fingerprint(self):
         """Search for a fingerprint."""
         print("Place your finger on the sensor...")
-        if self.get_image() != adafruit_fingerprint.OK:
+        if self.finger.get_image() != adafruit_fingerprint.OK:
             print("Fingerprint not detected.")
             return None
-        if self.image_2_tz(1) != adafruit_fingerprint.OK:
+        if self.finger.image_2_tz(1) != adafruit_fingerprint.OK:
             print("Error processing fingerprint.")
             return None
 
-        if self.finger_fast_search() == adafruit_fingerprint.OK:
-            print(f"Fingerprint found! ID: {self.finger_id}, Confidence: {self.confidence}")
-            return self.finger_id
+        if self.finger.finger_fast_search() == adafruit_fingerprint.OK:
+            print(f"Fingerprint found! ID: {self.finger.finger_id}, Confidence: {self.finger.confidence}")
+            return self.finger.finger_id
         else:
             print("No match found.")
             return None
 
     def delete_fingerprint(self, position):
         """Delete a fingerprint by its ID."""
-        if self.delete_model(position) == adafruit_fingerprint.OK:
+        if self.finger.delete_model(position) == adafruit_fingerprint.OK:
             print(f"Fingerprint at position {position} successfully deleted.")
             return True
         else:
@@ -69,8 +79,8 @@ class FingerprintManager:
 
     def list_fingerprints(self):
         """List all stored fingerprints."""
-        if self.read_templates() == adafruit_fingerprint.OK:
-            print("Stored Fingerprints:", self.templates)
+        if self.finger.read_templates() == adafruit_fingerprint.OK:
+            print("Stored Fingerprints:", self.finger.templates)
         else:
             print("Failed to read templates.")
 
