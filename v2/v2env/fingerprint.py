@@ -6,6 +6,13 @@ class FingerprintManager:
     def __init__(self, port="/dev/ttyS1", baudrate=57600):
         self.uart = serial.Serial(port, baudrate=baudrate, timeout=1)
         self.finger = adafruit_fingerprint.Adafruit_Fingerprint(self.uart)
+        
+    def wait_for_fingerprint(self):
+        """Wait until a fingerprint is placed on the sensor."""
+        print("Place your finger on the sensor...")
+        while self.get_image() != adafruit_fingerprint.OK:
+            pass  # Keep waiting until the sensor detects a fingerprint
+        print("Fingerprint detected!")
 
     def find_empty_slot(self):
         """Find the next available fingerprint slot."""
