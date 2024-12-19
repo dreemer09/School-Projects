@@ -69,8 +69,8 @@ class MainFrame(customtkinter.CTkFrame):
         """Continuously check for fingerprint scans."""
         if self.fp_manager.wait_for_fingerprint():
             finger_id = self.app.fp_manager.search_fingerprint()
-            if finger_id is not None:
 
+            if finger_id is not None:
                 if self.is_admin(finger_id):
                     # Display admin-specific message
                     self.result_label.configure(text=f"Admin detected: {name}", text_color="green")
